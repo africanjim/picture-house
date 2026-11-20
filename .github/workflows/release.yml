@@ -1,0 +1,88 @@
+# Builds the downloads (Windows, Mac, Linux) and the Docker image whenever a
+# version tag like v1.2.0 is pushed, and attaches them to a GitHub Release.
+name: Release
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  programs:
+    strategy:
+      matrix:
+        include:
+          - os: windows-latest
+            asset: picture-house-windows.exe
+          - os: macos-latest
+            asset: picture-house-mac.zip
+          - os: ubuntu-22.04
+            asset: picture-house-linux.tar.gz
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install "pyinstaller>=6,<7"
+      - run: bash packaging/build.sh
+        shell: bash
+      - name: Package
+        shell: bash
+        run: |
+          mkdir out
+          case "${{ runner.os }}" in
+            Windows) cp dist/picture-house.exe "out/${{ matrix.asset }}" ;;
+            macOS)   cd dist && zip -q "../out/${{ matrix.asset }}" picture-house ;;
+            Linux)   tar -C dist -czf "out/${{ matrix.asset }}" picture-house ;;
+          esac
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.asset }}
+          path: out/${{ matrix.asset }}
+
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository_owner }}/picture-house
+          tags: |
+            type=semver,pattern={{version}}
+            type=raw,value=latest
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+
+  release:
+    needs: [programs, docker]
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          path: assets
+          merge-multiple: true
+      - name: Linux desktop page maker
+        run: zip -q -r assets/picture-house-linux-desktop.zip picture-house.py install.sh icon.svg LICENSE README.md
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: assets/*
+          generate_release_notes: true

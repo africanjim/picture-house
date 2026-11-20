@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>Picture House</title>
+<meta name="description" content="Your Plex library as a good-looking app for your phone and computer.">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<style>
+:root{--ground:#EDEFF2;--surface:#FFFFFF;--ink:#161B22;--muted:#596371;--line:#D4DAE1;--accent:#8F5F00;--accent-fill:#F3C24E;--accent-ink:#2A1D00;--focus:#2563EB}
+@media (prefers-color-scheme: dark){:root{color-scheme:dark;--ground:#0E1217;--surface:#161B22;--ink:#E7EAEE;--muted:#9AA4B1;--line:#29313B;--accent:#F0BE4A;--accent-fill:#F0BE4A;--accent-ink:#1E1500;--focus:#7AA2FF}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--ground);color:var(--ink);font:17px/1.55 "IBM Plex Sans",system-ui,sans-serif}
+main{max-width:760px;margin:0 auto;padding:48px 16px 64px;display:grid;gap:36px}
+header{display:grid;gap:14px}
+header img{width:80px;height:80px}
+h1{font:800 clamp(48px,11vw,84px)/.88 "Big Shoulders Display","Arial Narrow",sans-serif;text-transform:uppercase;margin:0}
+h1 span{color:var(--accent)}
+.lede{font-size:20px;margin:0;max-width:34em}
+h2{font-size:20px;margin:0 0 12px}
+a{color:var(--accent)}
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.big{display:inline-flex;align-items:center;gap:10px;min-height:56px;padding:0 24px;border-radius:12px;background:var(--accent-fill);color:var(--accent-ink);font-weight:700;font-size:18px;text-decoration:none}
+.others{display:flex;flex-wrap:wrap;gap:8px 18px;margin-top:14px;font-size:15px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:20px}
+.card p{margin:0 0 10px}.card p:last-child{margin:0}
+ul.feat{margin:0;padding:0;list-style:none;display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+ul.feat li{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+ul.feat b{display:block}
+ol{margin:0;padding-left:22px}
+.muted{color:var(--muted);font-size:15px}
+footer{color:var(--muted);font-size:14px;border-top:1px solid var(--line);padding-top:18px}
+</style></head><body>
+<main>
+  <header>
+    <img src="icon.svg" alt="">
+    <h1>Picture <span>House</span></h1>
+    <p class="lede">Your Plex library as a good-looking app for your phone and computer. Scan a disc in a shop and see straight away if you already own it.</p>
+  </header>
+
+  <section>
+    <a class="big" id="main" href="https://github.com/africanjim/picture-house/releases/latest">⬇ <span id="mainText">Download Picture House</span></a>
+    <p class="muted" id="hint" style="margin:10px 0 0"></p>
+    <div class="others" id="others"></div>
+  </section>
+
+  <section class="card" id="phone" hidden>
+    <h2>On your phone?</h2>
+    <p>Picture House runs on a computer at home (ideally the one with Plex). Visit this page on that computer to download it.</p>
+    <p>Once it's running, open its address on your phone and tap <b>Add to Home screen</b>. It works like a normal app.</p>
+  </section>
+
+  <section>
+    <h2>What it does</h2>
+    <ul class="feat">
+      <li><b>Posters &amp; search</b>Browse by title, genre, decade, director or recently added.</li>
+      <li><b>Barcode scanner</b>Check a DVD or Blu-ray in the shop before you buy it again.</li>
+      <li><b>Wish list</b>One tap adds a disc you don't have yet.</li>
+      <li><b>Works offline</b>No signal? Your library is on your phone, and changes sync later.</li>
+      <li><b>Watched &amp; episodes</b>See what you've seen and every TV episode.</li>
+      <li><b>Private</b>Everything stays on your own computer. Read-only: it never changes Plex.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Setting up takes about two minutes</h2>
+    <ol>
+      <li>Download and open Picture House.</li>
+      <li>A page opens in your browser. Click <b>Sign in with Plex</b>.</li>
+      <li>Choose a password, and you're in.</li>
+    </ol>
+    <p class="muted" style="margin-top:12px">Step-by-step help, Docker and the full guide: <a href="https://github.com/africanjim/picture-house#readme">read the guide</a>.</p>
+  </section>
+
+  <footer>Free and open source (MIT). Picture House is an independent project and isn't made by or affiliated with Plex, Inc.</footer>
+</main>
+<script>
+const REL = "https://github.com/africanjim/picture-house/releases/latest/download/";
+const opts = {
+  windows: {label: "Download for Windows", file: "picture-house-windows.exe", hint: "If Windows says “Windows protected your PC”, click More info, then Run anyway."},
+  mac:     {label: "Download for Mac", file: "picture-house-mac.zip", hint: "For Macs with Apple silicon (M1 and newer). The first time, right-click it and choose Open."},
+  linux:   {label: "Download for Linux", file: "picture-house-linux.tar.gz", hint: "Unpack it and run ./picture-house"},
+  docker:  {label: "Docker / NAS", href: "https://github.com/africanjim/picture-house#docker"},
+};
+const ua = navigator.userAgent, plat = (navigator.userAgentData && navigator.userAgentData.platform) || navigator.platform || "";
+const phone = /Android|iPhone|iPad|iPod/i.test(ua) || (/Mac/.test(plat) && navigator.maxTouchPoints > 1);
+let mine = /Win/i.test(plat) ? "windows" : /Mac/i.test(plat) ? "mac" : /Linux|X11/i.test(plat + ua) ? "linux" : null;
+if (phone) { mine = null; document.getElementById("phone").hidden = false; }
+const main = document.getElementById("main");
+if (mine) {
+  main.href = REL + opts[mine].file;
+  document.getElementById("mainText").textContent = opts[mine].label;
+  document.getElementById("hint").textContent = opts[mine].hint;
+}
+const others = document.getElementById("others");
+for (const [k, o] of Object.entries(opts)) {
+  if (k === mine) continue;
+  const a = document.createElement("a");
+  a.href = o.href || REL + o.file; a.textContent = o.label.replace("Download for ", "");
+  others.append(a);
+}
+</script>
+</body></html>

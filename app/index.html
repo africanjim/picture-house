@@ -1,0 +1,909 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#0E1217">
+<title>__NAME__ Picture House</title>
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" href="/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;800&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+:root{
+  --ground:#EDEFF2; --surface:#FFFFFF; --sunk:#E3E7EC; --ink:#161B22; --muted:#596371; --faint:#8A94A1;
+  --line:#D4DAE1; --accent:#8F5F00; --accent-fill:#F3C24E; --accent-ink:#2A1D00;
+  --warn:#9A3412; --warn-fill:#FDE9DD; --good:#166534; --good-fill:#DCFCE7; --focus:#2563EB;
+  --display:"Big Shoulders Display","Arial Narrow","Roboto Condensed",sans-serif;
+  --body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --ground:#0E1217; --surface:#161B22; --sunk:#1D232C; --ink:#E7EAEE; --muted:#9AA4B1; --faint:#6B7584;
+    --line:#29313B; --accent:#F0BE4A; --accent-fill:#F0BE4A; --accent-ink:#1E1500;
+    --warn:#FDBA8C; --warn-fill:#3A2116; --good:#86EFAC; --good-fill:#12301E; --focus:#7AA2FF;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --ground:#0E1217; --surface:#161B22; --sunk:#1D232C; --ink:#E7EAEE; --muted:#9AA4B1; --faint:#6B7584;
+  --line:#29313B; --accent:#F0BE4A; --accent-fill:#F0BE4A; --accent-ink:#1E1500;
+  --warn:#FDBA8C; --warn-fill:#3A2116; --good:#86EFAC; --good-fill:#12301E; --focus:#7AA2FF;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;background:var(--ground);color:var(--ink);font:15px/1.5 var(--body);padding:0 16px calc(88px + env(safe-area-inset-bottom,0px))}
+.wrap{max-width:1080px;margin:0 auto}
+button{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+header.top{padding-block:calc(18px + env(safe-area-inset-top,0px)) 8px;display:grid;gap:10px}
+.status{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;font:500 11px/1.3 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--good);margin-right:6px;vertical-align:1px}
+.off .dot{background:var(--warn)}
+.status .pend{color:var(--accent)}
+h1{font:800 clamp(34px,8vw,72px)/.9 var(--display);letter-spacing:.01em;text-transform:uppercase;margin:0;text-wrap:balance}
+h1 span{color:var(--accent)}
+h2.sec{font:800 30px/1 var(--display);text-transform:uppercase;letter-spacing:.02em;margin:18px 0 10px}
+.back{all:unset;box-sizing:border-box;display:inline-flex;align-items:center;gap:6px;margin-top:14px;padding:8px 14px 8px 10px;border:1px solid var(--line);border-radius:999px;background:var(--surface);color:var(--ink);font:600 14px/1 var(--body);cursor:pointer}
+.back:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.back svg{width:18px;height:18px}
+.stats{display:flex;flex-wrap:wrap;gap:6px 24px;font-variant-numeric:tabular-nums}
+.stat b{display:block;font:700 26px/1 var(--display);letter-spacing:.02em}
+.stat small{font:400 11px/1.3 var(--mono);color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+
+/* bottom dock */
+nav.dock{position:fixed;left:0;right:0;bottom:0;z-index:20;display:grid;grid-template-columns:repeat(4,1fr);background:var(--surface);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px)}
+nav.dock button{all:unset;box-sizing:border-box;display:grid;justify-items:center;gap:2px;padding:9px 4px 10px;cursor:pointer;color:var(--muted);font:600 12px/1 var(--body);position:relative}
+nav.dock svg{width:24px;height:24px}
+nav.dock button[aria-current=page]{color:var(--ink)}
+nav.dock button[aria-current=page] svg{color:var(--accent)}
+nav.dock .badge{position:absolute;top:4px;left:calc(50% + 8px);min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:var(--accent-fill);color:var(--accent-ink);font:600 11px/18px var(--mono);text-align:center}
+nav.dock button:focus-visible{outline:2px solid var(--focus);outline-offset:-4px}
+
+/* library */
+.bar{position:sticky;top:0;z-index:5;background:var(--ground);padding-block:calc(8px + env(safe-area-inset-top,0px)) 8px;border-bottom:1px solid var(--line);display:grid;gap:8px;margin-top:10px}
+.row1{display:flex;gap:6px;flex-wrap:wrap}
+input[type=search],input[type=text],input[type=number],select,textarea{font:inherit;font-size:16px;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:8px 10px;min-width:0}
+input[type=search]{flex:1 1 100%}
+.row1 select{flex:1 1 0;font-size:14px;padding:7px 6px}
+.tabs{display:flex;gap:4px;overflow-x:auto;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tab{font:700 16px/1 var(--display);letter-spacing:.04em;text-transform:uppercase;border:0;background:none;color:var(--muted);padding:8px 11px;border-radius:999px;cursor:pointer;white-space:nowrap}
+.tab[aria-selected=true]{background:var(--ink);color:var(--ground)}
+.tab .n{font:500 11px/1 var(--mono);margin-left:5px;opacity:.7}
+.jump{display:flex;flex-wrap:wrap;gap:4px;padding-block:12px 0}
+.jump a{font:500 12px/1 var(--mono);color:var(--muted);text-decoration:none;padding:7px 9px;border-radius:6px;background:var(--sunk)}
+.note{color:var(--muted);font-size:14px;max-width:65ch;margin:12px 0 0}
+.group{padding-top:22px;scroll-margin-top:150px}
+.group h3{font:800 28px/1 var(--display);text-transform:uppercase;letter-spacing:.02em;margin:0 0 8px;display:flex;align-items:baseline;gap:10px}
+.group h3 small{font:500 12px/1 var(--mono);color:var(--muted)}
+ul.films{list-style:none;margin:0;padding:0;background:var(--surface);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+li.f{border-top:1px solid var(--line)}
+li.f:first-child{border-top:0}
+li.f.has-ck{display:grid;grid-template-columns:auto 1fr}
+li.f.has-ck>.more{grid-column:1/-1}
+label.ck{display:flex;align-items:center;justify-content:center;padding:0 2px 0 12px;cursor:pointer}
+label.ck input{width:22px;height:22px;accent-color:var(--accent);cursor:pointer;margin:0}
+.toast button{all:unset;margin-left:12px;font-weight:700;text-decoration:underline;cursor:pointer}
+li.f>button{all:unset;box-sizing:border-box;width:100%;display:grid;grid-template-columns:40px 1fr auto;gap:12px;align-items:center;padding:8px 12px;cursor:pointer}
+li.f>button:focus-visible{outline:2px solid var(--focus);outline-offset:-2px}
+.chip{position:relative;display:block;width:40px;height:60px;border-radius:4px;background:var(--sunk);overflow:hidden;box-shadow:inset 0 0 0 1px rgba(127,127,127,.18)}
+.chip img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.ti{min-width:0}
+.ti b{font-weight:600}
+.ti .yr{font:400 13px var(--mono);color:var(--muted);margin-left:6px}
+.ti .sub{display:block;color:var(--muted);font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.meta{display:flex;gap:8px;align-items:center;font:400 12px/1 var(--mono);color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+.tag{font:500 10px/1 var(--mono);letter-spacing:.05em;text-transform:uppercase;padding:4px 6px;border-radius:4px;background:var(--sunk);color:var(--muted)}
+.tag.k4{background:var(--accent-fill);color:var(--accent-ink)}
+.tag.warn{background:var(--warn-fill);color:var(--warn)}
+.tag.good{background:var(--good-fill);color:var(--good)}
+.more{padding:2px 12px 14px;display:grid;grid-template-columns:96px 1fr;gap:12px;font-size:14px}
+.more .big{width:96px;height:144px}
+.more .txt{display:grid;gap:8px;align-content:start;min-width:0}
+.more p{margin:0}
+.more dl{display:flex;flex-wrap:wrap;gap:4px 16px;margin:0;font-size:13px}
+.more dt{font:500 11px var(--mono);color:var(--faint);text-transform:uppercase;letter-spacing:.06em}
+.more dd{margin:0 0 0 6px}
+.more dl div{display:flex;align-items:baseline}
+.season{border-top:1px solid var(--line);padding-top:6px}
+.season summary{cursor:pointer;font-weight:600;padding:4px 0}
+.season summary small{font:400 12px var(--mono);color:var(--muted);margin-left:6px}
+ol.eps{list-style:none;margin:4px 0;padding:0;display:grid;gap:2px;font-size:13px}
+ol.eps li{display:grid;grid-template-columns:26px 1fr auto;gap:8px;padding:3px 0}
+ol.eps li.w{color:var(--muted)}
+.en,.em{font:400 12px var(--mono);color:var(--faint);font-variant-numeric:tabular-nums}
+.empty{padding:36px 0;color:var(--muted);text-align:center}
+.hide-sm{}
+@media (max-width:620px){
+  .hide-sm{display:none}
+  li.f>button{gap:10px;padding:8px 10px}
+  .more{grid-template-columns:72px 1fr}
+  .more .big{width:72px;height:108px}
+}
+
+/* cards, buttons, forms */
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px;display:grid;gap:10px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:10px 16px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font:600 15px/1 var(--body);cursor:pointer;text-decoration:none}
+.btn.primary{background:var(--accent-fill);color:var(--accent-ink);border-color:transparent}
+.btn.dark{background:var(--ink);color:var(--ground);border-color:transparent}
+.btn.small{min-height:34px;padding:6px 12px;font-size:13px}
+.btn.danger{color:var(--warn)}
+.btn:disabled{opacity:.5;cursor:default}
+.btns{display:flex;flex-wrap:wrap;gap:8px}
+label.fld{display:grid;gap:4px;font:500 12px var(--mono);color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+label.fld input,label.fld select,label.fld textarea{text-transform:none;letter-spacing:0;font-family:var(--body)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.muted{color:var(--muted)}
+.small{font-size:13px}
+.mono{font-family:var(--mono)}
+
+/* scan */
+.cam{position:relative;background:#000;border-radius:12px;overflow:hidden;aspect-ratio:4/3;max-height:52vh;width:100%}
+.cam video{width:100%;height:100%;object-fit:cover;display:block}
+.cam .aim{position:absolute;left:10%;right:10%;top:34%;bottom:34%;border:3px solid rgba(240,190,74,.95);border-radius:10px;box-shadow:0 0 0 999px rgba(0,0,0,.35)}
+.cam .hint{position:absolute;left:0;right:0;bottom:10px;text-align:center;color:#fff;font:500 13px var(--body);text-shadow:0 1px 2px #000}
+.cam .torch{position:absolute;top:10px;right:10px}
+.verdict{display:grid;gap:4px;padding:14px;border-radius:12px}
+.verdict b{font:800 30px/1 var(--display);text-transform:uppercase;letter-spacing:.02em}
+.verdict.have{background:var(--good-fill);color:var(--good)}
+.verdict.no{background:var(--warn-fill);color:var(--warn)}
+.verdict.maybe{background:var(--sunk);color:var(--ink)}
+.hit{display:grid;grid-template-columns:48px 1fr;gap:12px;align-items:center}
+.hit .chip{width:48px;height:72px}
+.hit button.pick{all:unset;cursor:pointer;display:contents}
+.recent li{display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-top:1px solid var(--line);font-size:14px}
+.recent li:first-child{border-top:0}
+.recent ul{list-style:none;margin:0;padding:0}
+.recent button{all:unset;cursor:pointer;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* wish list */
+ul.wish{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+ul.wish li{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px;display:grid;gap:6px}
+ul.wish .top{display:flex;justify-content:space-between;gap:10px;align-items:baseline}
+ul.wish b{font-weight:600}
+ul.wish .sub{font:400 12px var(--mono);color:var(--muted);display:flex;flex-wrap:wrap;gap:4px 12px;align-items:center}
+.toast{position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--ground);padding:10px 16px;border-radius:10px;font-size:14px;z-index:30;max-width:calc(100% - 32px)}
+.prog{height:6px;background:var(--sunk);border-radius:3px;overflow:hidden}
+.prog i{display:block;height:100%;background:var(--accent-fill);width:0}
+footer{color:var(--faint);font:400 12px/1.5 var(--mono);padding-top:30px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
+</style>
+</head><body>
+<div class="wrap">
+  <header class="top">
+    <div class="status" id="status"><span><span class="dot"></span><span id="net">Starting…</span></span><span id="upd"></span><span class="pend" id="pend" hidden></span></div>
+    <h1 id="h1">__NAME__ <span>Picture House</span></h1>
+  </header>
+
+  <!-- LIBRARY -->
+  <section id="v-library" data-view>
+    <div class="stats" id="stats"></div>
+    <div class="bar">
+      <input type="search" id="q" placeholder="Search titles, directors, genres…" aria-label="Search" autocomplete="off">
+      <div class="row1">
+        <select id="lib" aria-label="Library"><option value="">All libraries</option></select>
+        <select id="qual" aria-label="Quality"><option value="">Any quality</option><option>4K</option><option>1080p</option><option>720p</option><option>SD</option></select>
+        <select id="seen" aria-label="Watched"><option value="">Seen or not</option><option value="n">Not watched</option><option value="y">Watched</option></select>
+        <select id="sort" aria-label="Sort"><option value="t">Title</option><option value="y">Newest</option><option value="yo">Oldest</option><option value="r">Rating</option><option value="a">Added</option><option value="m">Longest</option></select>
+      </div>
+      <div class="tabs" role="tablist" id="tabs"></div>
+    </div>
+    <div id="list"><p class="empty">Loading your library…</p></div>
+  </section>
+
+  <!-- SCAN -->
+  <section id="v-scan" data-view hidden>
+    <button class="back" type="button" data-back><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M15 18l-6-6 6-6"/></svg>Library</button>
+    <h2 class="sec">Scan a disc</h2>
+    <div class="cam" id="cam" hidden>
+      <video id="video" playsinline muted></video>
+      <div class="aim"></div>
+      <div class="hint">Line the barcode up inside the box</div>
+      <button class="btn small torch" id="torch" hidden>Light</button>
+    </div>
+    <div class="btns" style="margin-top:10px">
+      <button class="btn primary" id="scanBtn">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2M7 8v8M10 8v8M13 8v8M17 8v8"/></svg>
+        <span>Start scanning</span></button>
+    </div>
+    <p class="muted small" id="scanNote" hidden></p>
+    <div id="result" style="margin-top:14px"></div>
+    <details class="card" style="margin-top:14px">
+      <summary><b>No barcode? Type the number or a title</b></summary>
+      <form id="codeForm" class="btns" style="margin-top:8px">
+        <input type="text" id="codeIn" inputmode="numeric" pattern="[0-9 ]*" placeholder="Barcode number" aria-label="Barcode number" style="flex:1 1 160px">
+        <button class="btn small dark">Check</button>
+      </form>
+      <form id="titleForm" class="btns">
+        <input type="search" id="titleIn" placeholder="Movie or show name" aria-label="Title" style="flex:1 1 160px">
+        <button class="btn small dark">Do I have it?</button>
+      </form>
+    </details>
+    <div class="recent card" style="margin-top:14px" id="recentBox" hidden>
+      <b>Recent scans</b>
+      <ul id="recent"></ul>
+    </div>
+  </section>
+
+  <!-- WISH LIST -->
+  <section id="v-wish" data-view hidden>
+    <button class="back" type="button" data-back><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M15 18l-6-6 6-6"/></svg>Library</button>
+    <h2 class="sec">Wish list</h2>
+    <details class="card" id="addBox">
+      <summary><b>Add a title by hand</b></summary>
+      <div id="addForm"></div>
+    </details>
+    <div class="btns" style="margin:12px 0 8px;align-items:center;justify-content:space-between">
+      <span class="muted small" id="wishCount"></span>
+      <select id="wishSort" aria-label="Sort wish list" style="font-size:14px"><option value="new">Newest first</option><option value="az">A–Z</option><option value="fmt">By format</option></select>
+    </div>
+    <ul class="wish" id="wish"></ul>
+  </section>
+
+  <!-- MORE -->
+  <section id="v-more" data-view hidden>
+    <button class="back" type="button" data-back><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M15 18l-6-6 6-6"/></svg>Library</button>
+    <h2 class="sec">Settings</h2>
+    <div style="display:grid;gap:12px">
+      <div class="card">
+        <b>Library</b>
+        <p class="muted small" style="margin:0" id="libInfo"></p>
+        <div class="btns"><button class="btn small" id="refreshBtn">Refresh from Plex now</button></div>
+      </div>
+      <div class="card">
+        <b>Offline mode</b>
+        <p class="muted small" style="margin:0">Your library, wish list and the posters you've seen are kept on this phone, so the app still works with no signal. Scans and wish-list changes made offline are sent to the server once you're back online.</p>
+        <p class="muted small" style="margin:0" id="offInfo"></p>
+        <div class="prog" id="prog" hidden><i></i></div>
+        <div class="btns"><button class="btn small" id="postersBtn">Save all posters for offline</button></div>
+      </div>
+      <div class="card" id="installBox" hidden>
+        <b>Install</b>
+        <p class="muted small" style="margin:0">Add Picture House to your home screen so it opens like an app, even with no signal.</p>
+        <div class="btns"><button class="btn small primary" id="installBtn">Install app</button></div>
+      </div>
+      <div class="card">
+        <b>Theme</b>
+        <div class="btns" id="themeBtns">
+          <button class="btn small" data-theme="">Match phone</button><button class="btn small" data-theme="light">Light</button><button class="btn small" data-theme="dark">Dark</button>
+        </div>
+      </div>
+      <form method="post" action="/logout"><button class="btn small danger">Sign out</button></form>
+      <footer>Picture House · details come from Plex. Barcode titles come from a free online lookup (upcitemdb.com) and may be missing for some discs; type the title once and the app remembers it. Not made by or affiliated with Plex, Inc.</footer>
+    </div>
+  </section>
+</div>
+
+<nav class="dock" aria-label="Sections">
+  <button data-go="library"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 4v16M17 4v16M3 9h4M3 15h4M17 9h4M17 15h4"/></svg>Library</button>
+  <button data-go="scan"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2M7 8v8M10 8v8M13 8v8M17 8v8"/></svg>Scan</button>
+  <button data-go="wish"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-4.5-9.5-9A5.5 5.5 0 0 1 12 6a5.5 5.5 0 0 1 9.5 6C19 16.5 12 21 12 21z"/></svg>Wish list<span class="badge" id="wishBadge" hidden></span></button>
+  <button data-go="more"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>Settings</button>
+</nav>
+<div class="toast" id="toast" role="status" hidden></div>
+
+<script>
+"use strict";
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const store = {
+  get(k, d) { try { const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} },
+};
+const HAS_CACHE = "caches" in window;
+const today = () => new Date().toISOString().slice(0, 10);
+const newId = () => (crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2)).replace(/[^A-Za-z0-9_-]/g, "").slice(0, 40);
+const fmtDate = s => s ? new Date(s.length <= 10 ? s + "T00:00" : s).toLocaleDateString(undefined, {day:"numeric", month:"short", year:"numeric"}) : "";
+const fmtWhen = s => { if (!s) return ""; const d = new Date(s); return d.toLocaleDateString(undefined, {day:"numeric", month:"short"}) + " " + d.toLocaleTimeString(undefined, {hour:"numeric", minute:"2-digit"}); };
+
+let toastTimer;
+function toast(msg, undo) {
+  const t = $("#toast"); t.textContent = msg; t.hidden = false; clearTimeout(toastTimer);
+  if (undo) { const b = document.createElement("button"); b.type = "button"; b.textContent = "Undo"; b.onclick = () => { t.hidden = true; undo(); }; t.append(b); }
+  toastTimer = setTimeout(() => t.hidden = true, undo ? 6000 : 3200);
+}
+
+/* ------------------------------------------------------------ theme */
+function applyTheme(t) { if (t) document.documentElement.dataset.theme = t; else delete document.documentElement.dataset.theme; }
+applyTheme(store.get("ph-theme", ""));
+$("#themeBtns").addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; store.set("ph-theme", b.dataset.theme); applyTheme(b.dataset.theme); });
+
+/* ------------------------------------------------------------ network */
+let online = navigator.onLine, signedOut = false;
+async function api(path, opts = {}, ms = 10000) {
+  const ctl = new AbortController(); const timer = setTimeout(() => ctl.abort(), ms);
+  try {
+    const r = await fetch(path, {credentials: "same-origin", ...opts, signal: ctl.signal});
+    if (r.status === 401) { signedOut = true; updateStatus(); throw new Error("signed out"); }
+    setOnline(true);
+    return r;
+  } catch (e) {
+    if (e.message !== "signed out") setOnline(false);
+    throw e;
+  } finally { clearTimeout(timer); }
+}
+function setOnline(v) { if (online !== v) { online = v; updateStatus(); if (v) flush(); } }
+addEventListener("online", () => { online = true; updateStatus(); flush(); loadLibrary(true); });
+addEventListener("offline", () => { online = false; updateStatus(); });
+
+function updateStatus() {
+  const st = $("#status");
+  st.classList.toggle("off", !online || signedOut);
+  $("#net").textContent = signedOut ? "Signed out" : online ? "Online" : "Offline";
+  $("#upd").textContent = LIB ? (online ? "Library updated " : "Saved library from ") + fmtWhen(LIB.updated) : "";
+  const n = OUTBOX.length;
+  $("#pend").hidden = !n; $("#pend").textContent = `${n} change${n === 1 ? "" : "s"} waiting to sync`;
+  if (signedOut) $("#pend").hidden = false, $("#pend").innerHTML = `<a href="/" style="color:inherit">Sign in again</a>`;
+}
+
+/* ------------------------------------------------------------ views */
+const VIEWS_MAIN = ["library", "scan", "wish", "more"];
+let tab = "library";   // always open on the library (only the home-screen shortcuts open elsewhere)
+const goParam = new URLSearchParams(location.search).get("go");
+history.replaceState(null, "", "/");
+function go(t, fromBack) {
+  if (!VIEWS_MAIN.includes(t)) t = "library";
+  // let the phone's Back button (or swipe back) return to the library
+  if (!fromBack) {
+    if (t !== "library" && tab === "library") history.pushState({tab: t}, "");
+    else if (t !== "library") history.replaceState({tab: t}, "");
+    else if (history.state && history.state.tab) { history.back(); return; }
+  }
+  tab = t;
+  document.querySelectorAll("[data-view]").forEach(s => s.hidden = s.id !== "v-" + t);
+  document.querySelectorAll("nav.dock button").forEach(b => b.setAttribute("aria-current", b.dataset.go === t ? "page" : "false"));
+  if (t !== "scan") stopScan();
+  if (t === "wish") renderWish();
+  if (t === "more") renderMore();
+  scrollTo(0, 0);
+}
+document.querySelector("nav.dock").addEventListener("click", e => { const b = e.target.closest("button"); if (b) go(b.dataset.go); });
+document.addEventListener("click", e => { if (e.target.closest("[data-back]")) go("library"); });
+addEventListener("popstate", e => go((e.state && e.state.tab) || "library", true));
+
+/* ------------------------------------------------------------ library data */
+let LIB = null, ITEMS = [], EPS = {};
+const sortKey = t => t.toLowerCase().replace(/^(the|a|an)\s+/, "").replace(/^[^a-z0-9]+/, "");
+const norm = s => String(s || "").toLowerCase().normalize("NFKD").replace(/[̀-ͯ]/g, "").replace(/&/g, "and").replace(/[^a-z0-9]/g, "");
+const isSeen = d => d.tv ? d.w >= (d.tv[1] || 1) : !!d.w;
+const posterUrl = d => d.id && d.pv ? `/api/poster/${d.id}?v=${d.pv}` : "";
+
+let CHECKED = new Set(store.get("ph-checked", []));
+function applyChecked() { ITEMS.forEach(d => { if (d.x0 === undefined) d.x0 = d.x || ""; d.x = d.x0 && !CHECKED.has(String(d.id)) ? d.x0 : ""; }); }
+function setLibrary(lib) {
+  LIB = lib; EPS = lib.eps || {};
+  ITEMS = lib.items;
+  applyChecked();
+  ITEMS.forEach((d, i) => { d.ix = i; d.sk = sortKey(d.t); d.nt = norm(d.t); d.hay = [d.t, d.y, ...(d.g||[]), ...(d.d||[]), d.l, d.st, d.co].join(" ").toLowerCase(); });
+  const name = lib.name || "My";
+  document.title = name + " Picture House";
+  $("#h1").innerHTML = `${esc(name)} <span>Picture House</span>`;
+  const libSel = $("#lib"), cur = libSel.value;
+  libSel.innerHTML = `<option value="">All libraries</option>` + [...new Set(ITEMS.map(d => d.l))].sort().map(l => `<option>${esc(l)}</option>`).join("");
+  libSel.value = cur;
+  const films = ITEMS.filter(d => !d.tv), shows = ITEMS.filter(d => d.tv);
+  const seen = films.filter(d => d.w).length;
+  $("#stats").innerHTML = [
+    [films.length.toLocaleString(), "films"],
+    ...(shows.length ? [[shows.length, `TV shows · ${shows.reduce((s, d) => s + (d.tv[1] || 0), 0)} eps`]] : []),
+    [Math.round(films.reduce((s, d) => s + (d.m || 0), 0) / 60).toLocaleString(), "hours"],
+    [`${Math.round(seen / Math.max(1, films.length) * 100)}%`, "of films watched"],
+  ].map(([b, s]) => `<div class="stat"><b>${b}</b><small>${s}</small></div>`).join("");
+  updateStatus(); render(); renderWish();
+  if (lastResult) showResult(lastResult);
+}
+
+async function loadLibrary(quiet) {
+  let had = !!LIB;
+  if (!LIB && HAS_CACHE) {
+    try { const hit = await (await caches.open("ph-data")).match("/api/library"); if (hit) { setLibrary(await hit.json()); had = true; } } catch (e) {}
+  }
+  try {
+    const r = await api("/api/library", {}, 20000);
+    if (r.ok) {
+      const copy = r.clone();
+      const lib = await r.json();
+      if (HAS_CACHE) try { await (await caches.open("ph-data")).put("/api/library", copy); } catch (e) {}
+      if (!LIB || lib.updated !== LIB.updated || lib.items.length !== LIB.items.length) setLibrary(lib);
+    } else if (!had) {
+      const j = await r.json().catch(() => ({}));
+      $("#list").innerHTML = `<p class="empty">${esc(j.error || "Couldn't load the library.")}</p>`;
+    }
+  } catch (e) {
+    if (!had && !quiet) $("#list").innerHTML = `<p class="empty">You're offline and this phone has no saved copy of the library yet. Open the app once with signal and it will be kept for next time.</p>`;
+  }
+  updateStatus();
+}
+
+/* ------------------------------------------------------------ library view */
+const VIEWS = [
+  {id:"az", name:"A–Z"}, {id:"genre", name:"Genre"}, {id:"decade", name:"Decade"}, {id:"library", name:"Library"},
+  {id:"director", name:"Director"}, {id:"added", name:"Recently added"}, {id:"tv", name:"TV"}, {id:"attention", name:"Needs attention"},
+];
+let state = { view: store.get("ph-view", "az") };
+if (!VIEWS.some(v => v.id === state.view)) state.view = "az";
+["q","lib","qual","seen","sort"].forEach(id => $("#" + id).addEventListener("input", render));
+$("#tabs").addEventListener("click", e => { const b = e.target.closest(".tab"); if (b) { state.view = b.dataset.v; store.set("ph-view", state.view); render(); } });
+
+const sorters = {
+  t: (a, b) => a.sk.localeCompare(b.sk),
+  y: (a, b) => (b.y || 0) - (a.y || 0) || a.sk.localeCompare(b.sk),
+  yo: (a, b) => (a.y || 9999) - (b.y || 9999) || a.sk.localeCompare(b.sk),
+  r: (a, b) => (b.r || 0) - (a.r || 0) || a.sk.localeCompare(b.sk),
+  a: (a, b) => (b.a || "").localeCompare(a.a || ""),
+  m: (a, b) => (b.m || 0) - (a.m || 0),
+};
+const decOf = y => Math.floor(y / 10) * 10;
+
+function chip(d, cls = "chip") {
+  const [c1, c2] = d.k || [];
+  const bg = c1 ? ` style="background:linear-gradient(160deg,#${c1},#${c2 || c1})"` : "";
+  const u = posterUrl(d);
+  return `<span class="${cls}"${bg}>${u ? `<img loading="lazy" decoding="async" alt="" src="${u}">` : ""}</span>`;
+}
+function seenTag(d) {
+  return isSeen(d) ? `<span class="tag good">✓ seen</span>` : d.tv && d.w ? `<span class="tag">${d.w}/${d.tv[1]}</span>` : "";
+}
+// tick boxes are for a computer (mouse); phones just show the list, so ticks are only ever made in one place
+const CAN_TICK = matchMedia("(hover: hover) and (pointer: fine)").matches;
+function row(d, ck) {
+  const sub = d.x === "check" ? `Plex matched this to “${esc(d.p)}”` :
+              d.x === "unmatched" ? `Not matched in Plex · ${esc(d.l)}` :
+              [(d.g || []).slice(0, 3).join(", "), d.d ? d.d.join(" & ") : "", d.tv ? `${d.tv[0]} season${d.tv[0] === 1 ? "" : "s"} · ${d.tv[1]} eps` : ""].filter(Boolean).join(" · ");
+  const meta = [
+    d.x ? `<span class="tag warn">${d.x === "check" ? "check" : "unmatched"}</span>` : "",
+    seenTag(d),
+    d.r ? `<span class="hide-sm">★ ${d.r.toFixed(1)}</span>` : "",
+    d.q ? `<span class="tag ${d.q === "4K" ? "k4" : ""} hide-sm">${d.q}</span>` : "",
+  ].join("");
+  const box = ck && CAN_TICK && d.id ? `<label class="ck" title="Tick when you're happy with this one"><input type="checkbox" data-ok="${d.id}" aria-label="Happy with ${esc(d.t)}"></label>` : "";
+  return `<li class="f${box ? " has-ck" : ""}">${box}<button aria-expanded="false" data-ix="${d.ix}">${chip(d)}<span class="ti"><b>${esc(d.t)}</b>${d.y ? `<span class="yr">${d.y}</span>` : ""}<span class="sub">${sub}</span></span><span class="meta">${meta}</span></button></li>`;
+}
+function episodes(list) {
+  const by = new Map(); list.forEach(e => { if (!by.has(e[0])) by.set(e[0], []); by.get(e[0]).push(e); });
+  return [...by].map(([sn, eps]) => `<details class="season"><summary>${sn ? "Season " + sn : "Specials"}<small>${eps.filter(e => e[3]).length}/${eps.length} watched</small></summary><ol class="eps">${eps.map(e =>
+    `<li class="${e[3] ? "w" : ""}"><span class="en">${e[1]}</span><span>${esc(e[2])}</span><span class="em">${e[3] ? "✓" : ""}${e[4] ? " " + e[4] + "m" : ""}</span></li>`).join("")}</ol></details>`).join("");
+}
+function detail(d) {
+  const f = [["Library", d.l], ["Rated", d.c], ["Runtime", d.m ? `${Math.floor(d.m / 60)}h ${String(d.m % 60).padStart(2, "0")}m` : ""], ["Rating", d.r ? "★ " + d.r.toFixed(1) : ""], ["Quality", d.q], ["Director", d.d?.join(", ")], ["Genres", d.g?.join(", ")], ["Studio", d.st], ["Country", d.co], ["Added", fmtDate(d.a)], ["Watched", d.tv ? `${d.w || 0} of ${d.tv[1]} episodes` : d.w ? "Yes" : "Not yet"]].filter(x => x[1]);
+  const note = d.x === "check" ? `<p>The file name suggests a different film from Plex's match. Fix it in Plex with ⋯ then <b>Fix Match</b>.</p>` :
+               d.x === "unmatched" ? `<p>Plex has no online details for this one.</p>` : "";
+  const ep = d.tv && d.id && EPS[d.id] ? episodes(EPS[d.id]) : "";
+  return `<div class="more">${chip(d, "chip big")}<div class="txt">${d.s ? `<p>${esc(d.s)}</p>` : ""}${note}<dl>${f.map(([k, v]) => `<div><dt>${k}</dt><dd>${esc(v)}</dd></div>`).join("")}</dl>${ep}</div></div>`;
+}
+$("#list").addEventListener("click", e => {
+  const b = e.target.closest("li.f>button"); if (!b) return;
+  const open = b.getAttribute("aria-expanded") === "true";
+  b.setAttribute("aria-expanded", !open);
+  if (open) b.nextElementSibling?.remove(); else b.insertAdjacentHTML("afterend", detail(ITEMS[b.dataset.ix]));
+});
+function setChecked(id, on) {
+  id = String(id); on ? CHECKED.add(id) : CHECKED.delete(id);
+  store.set("ph-checked", [...CHECKED]); applyChecked(); render();
+  queue({op: "ok", id, on});
+}
+$("#list").addEventListener("change", e => {
+  const cb = e.target.closest("label.ck input"); if (!cb) return;
+  const d = ITEMS.find(x => String(x.id) === cb.dataset.ok); if (!d) return;
+  setChecked(d.id, true);
+  toast(`${d.t} is off the list`, () => setChecked(d.id, false));
+});
+// a poster that fails to load just leaves the colour swatch
+document.addEventListener("error", e => { if (e.target.tagName === "IMG" && e.target.closest(".chip")) e.target.remove(); }, true);
+
+function groupsFor(list, view, q) {
+  const g = new Map(); const add = (k, d) => { if (!g.has(k)) g.set(k, []); g.get(k).push(d); };
+  if (view === "az") list.forEach(d => { const c = d.sk[0] || "#"; add(/[a-z]/.test(c) ? c.toUpperCase() : "#", d); });
+  if (view === "genre") list.forEach(d => (d.g && d.g.length ? d.g : ["No genre listed"]).forEach(x => add(x, d)));
+  if (view === "decade") list.forEach(d => add(d.y ? decOf(d.y) + "s" : "Year unknown", d));
+  if (view === "library") list.forEach(d => add(d.l, d));
+  if (view === "director") list.forEach(d => (d.d && d.d.length ? d.d : ["Director unknown"]).forEach(x => add(x, d)));
+  if (view === "added") list.forEach(d => add(d.a ? new Date(d.a + "T00:00").toLocaleDateString(undefined, {month:"long", year:"numeric"}) : "Date unknown", d));
+  if (view === "tv") list.filter(d => d.tv).forEach(d => add(isSeen(d) ? "All watched" : d.w ? "Watching" : "Not started", d));
+  if (view === "attention") list.filter(d => d.x).forEach(d => add(d.x === "check" ? "Check the Plex match" : "Not matched in Plex", d));
+  let keys = [...g.keys()];
+  const last = k => /unknown|No genre/.test(k) ? 1 : 0;
+  if (view === "az") keys.sort((a, b) => (a === "#") - (b === "#") || a.localeCompare(b));
+  else if (view === "decade") keys.sort((a, b) => last(a) - last(b) || parseInt(b) - parseInt(a));
+  else if (view === "added") keys.sort((a, b) => last(a) - last(b) || (g.get(b)[0].a || "").localeCompare(g.get(a)[0].a || ""));
+  else if (view === "genre" || view === "director") keys.sort((a, b) => last(a) - last(b) || g.get(b).length - g.get(a).length || a.localeCompare(b));
+  else if (view === "tv") keys.sort((a, b) => ["Watching", "Not started", "All watched"].indexOf(a) - ["Watching", "Not started", "All watched"].indexOf(b));
+  else keys.sort((a, b) => a.localeCompare(b));
+  if (view === "director") keys = keys.filter(k => g.get(k).length > 1 || q);
+  return keys.map(k => [k, g.get(k)]);
+}
+function render() {
+  if (!LIB) return;
+  const q = $("#q").value.trim().toLowerCase(), lib = $("#lib").value, qual = $("#qual").value, seen = $("#seen").value;
+  const terms = q.split(/\s+/).filter(Boolean);
+  const list = ITEMS.filter(d => (!lib || d.l === lib) && (!qual || d.q === qual) && (!seen || (seen === "y") === isSeen(d)) && terms.every(t => d.hay.includes(t)));
+  $("#tabs").innerHTML = VIEWS.map(v => `<button class="tab" role="tab" data-v="${v.id}" aria-selected="${v.id === state.view}">${v.name}${v.id === "attention" ? `<span class="n">${ITEMS.filter(d => d.x).length}</span>` : ""}</button>`).join("");
+  const view = state.view;
+  const groups = groupsFor(list, view, q);
+  const sorter = sorters[$("#sort").value] || sorters.t;
+  groups.forEach(([, items]) => items.sort(view === "added" ? sorters.a : sorter));
+  const slug = k => "g-" + String(k).replace(/[^a-z0-9]+/gi, "-");
+  const jump = groups.length > 3 && view !== "added" ? `<nav class="jump" aria-label="Jump to">${groups.map(([k]) => `<a href="#${slug(k)}">${esc(k)}</a>`).join("")}</nav>` : "";
+  const notes = {
+    genre: "A film with several genres appears under each one.",
+    director: "Directors with two or more titles here. Search a name to see anyone with one.",
+    attention: "Unmatched titles have no online details in Plex. “Check” titles look like Plex matched the wrong film. Fix either in Plex with ⋯ › Fix Match." + (CAN_TICK ? " Tick the box once you're happy with a title and it leaves this list for good." : " To clear titles you're happy with, open Picture House on your computer and tick them there."),
+  };
+  $("#list").innerHTML = (notes[view] ? `<p class="note">${notes[view]}</p>` : "") + jump + (groups.length ? groups.map(([k, items]) =>
+    `<section class="group" id="${slug(k)}"><h3>${esc(k)}<small>${items.length}</small></h3><ul class="films">${items.map(d => row(d, view === "attention")).join("")}</ul></section>`).join("")
+    : view === "attention" && !q ? `<p class="empty">Nothing left to check. Nice work.</p>` : `<p class="empty">Nothing matches${q ? ` “${esc(q)}”` : ""}. Try fewer words or clear the filters.</p>`);
+  $("#list").querySelectorAll(".jump a").forEach(a => a.addEventListener("click", e => { e.preventDefault(); document.getElementById(a.getAttribute("href").slice(1))?.scrollIntoView({behavior:"smooth"}); }));
+}
+
+/* ------------------------------------------------------------ title matching */
+const FORMAT_WORDS = /\b(4k\s*ultra\s*hd|ultra\s*hd|uhd|4k|blu[\s-]?ray|hd\s*dvd|dvd|3d|digital(\s*(copy|code|hd))?|region\s*[a-z0-9]+|pal|ntsc|widescreen|full\s*screen|steelbook|slip\s*cover|(special|collector'?s|limited|deluxe|anniversary|extended|ultimate|definitive|platinum|remastered|criterion)\s+(edition|collection|cut)|director'?s\s+cut|extended\s+cut|theatrical\s+cut|edition|import|brand\s+new|new|sealed|\d+\s*-?\s*discs?|discs?\s*set|box\s*set|combo(\s*pack)?|multi-?format|australian|aus|r[1-6]|zone\s*[a-z0-9]|the\s+complete|complete)\b/gi;
+function cleanTitle(raw) { return cleanParts(raw).join(": ") || String(raw || "").trim(); }
+function cleanParts(raw) {
+  let t = String(raw || "");
+  t = t.replace(/\[[^\]]*\]|\([^)]*\)|\{[^}]*\}/g, " ");
+  t = t.replace(FORMAT_WORDS, " ");
+  t = t.replace(/\b(season|series|seasons)\s*(\d+|one|two|three|four|five|six|seven|eight|nine|ten)\b.*$/i, " ");
+  t = t.replace(/\s+/g, " ").replace(/^[\s\-–—|:,+\/]+|[\s\-–—|:,+\/]+$/g, "").trim();
+  const parts = titleParts(t).map(p => p.replace(/\s+(19[2-9]\d|20[0-4]\d)$/, (m, y) => +y <= new Date().getFullYear() + 1 ? "" : m).trim()).filter(Boolean);
+  return parts;
+}
+// "Universal Studios - The Blues Brothers" -> ["The Blues Brothers"]
+const STUDIO = /\b(universal|warner|paramount|sony|disney|buena\s+vista|20th\s+century|fox|mgm|lions\s*gate|columbia|dreamworks|studios?|pictures|entertainment|home\s+(video|entertainment)|roadshow|madman|umbrella|via\s*vision|shock|palace|eagle\s+rock|bbc|hbo|criterion|arrow|kino|shout\s+factory|anchor\s+bay|icon|hopscotch|reel)\b/i;
+function titleParts(t) {
+  const parts = t.split(/\s+[-–—|]\s+/).map(p => p.trim()).filter(Boolean);
+  const keep = parts.filter(p => !(STUDIO.test(p) && p.split(/\s+/).length <= 4));
+  return keep.length ? keep : parts;
+}
+const yearIn = s => +((String(s || "").match(/\b(19[2-9]\d|20[0-4]\d)\b/) || [])[1] || 0);
+const formatIn = s => /4k|uhd|ultra\s*hd/i.test(s) ? "4K" : /blu[\s-]?ray/i.test(s) ? "Blu-ray" : /dvd/i.test(s) ? "DVD" : "";
+function bigrams(s) { const m = new Map(); for (let i = 0; i < s.length - 1; i++) { const b = s.slice(i, i + 2); m.set(b, (m.get(b) || 0) + 1); } return m; }
+function dice(a, b) {
+  if (a === b) return 1; if (a.length < 2 || b.length < 2) return 0;
+  const A = bigrams(a), B = bigrams(b); let n = 0;
+  for (const [k, v] of A) { const w = B.get(k); if (w) n += Math.min(v, w); }
+  return 2 * n / (a.length + b.length - 2);
+}
+function matchTitle(raw) {
+  const clean = cleanTitle(raw), n = norm(clean), nr = norm(raw), yr = yearIn(raw);
+  const strip = s => s.replace(/^(the|a|an)(?=.)/, "");
+  if (!n) return [];
+  const parts = cleanParts(raw).map(norm).filter(x => x.length >= 2 && x !== n);
+  return ITEMS.map(d => {
+    const t = d.nt; if (!t) return null;
+    let s = Math.max(dice(n, t), ...parts.map(c => dice(c, t) * 0.95));
+    if (t === n || strip(t) === strip(n)) s = 1;
+    else if (parts.some(c => t === c || strip(t) === strip(c))) s = Math.max(s, 0.95);
+    else if (t.length >= 5 && nr.includes(t)) s = Math.max(s, 0.8 + 0.15 * Math.min(1, t.length / Math.max(n.length, 1)));
+    else if (n.length >= 4 && t.includes(n)) s = Math.max(s, 0.75);
+    if (yr && d.y) s += yr === d.y ? 0.05 : -0.03;
+    return [Math.min(s, 1.05), d];
+  }).filter(x => x && x[0] >= 0.5).sort((a, b) => b[0] - a[0]).slice(0, 5);
+}
+
+/* ------------------------------------------------------------ barcodes + scanning */
+let CODES = store.get("ph-codes", {});
+let RECENT = store.get("ph-recent", []);
+let lastResult = null;
+const canon = c => { c = String(c).replace(/\D/g, ""); return c.length === 12 ? "0" + c : c; };
+function checkDigitOk(c) {
+  if (!/^\d{8}$|^\d{12,14}$/.test(c)) return false;
+  const d = c.split("").map(Number), last = d.pop();
+  const sum = d.reverse().reduce((s, x, i) => s + x * (i % 2 === 0 ? 3 : 1), 0);
+  return (10 - sum % 10) % 10 === last;
+}
+
+let stream = null, detector = null, scanning = false;
+async function startScan() {
+  if (!("BarcodeDetector" in window)) {
+    $("#scanNote").hidden = false;
+    $("#scanNote").textContent = "This browser can't read barcodes. Use Chrome on Android, or type the number under the barcode below.";
+    return;
+  }
+  if (!navigator.mediaDevices?.getUserMedia) { $("#scanNote").hidden = false; $("#scanNote").textContent = "The camera needs the app opened from its https:// address."; return; }
+  try {
+    if (!detector) {
+      const ok = await BarcodeDetector.getSupportedFormats();
+      detector = new BarcodeDetector({formats: ["ean_13", "ean_8", "upc_a", "upc_e"].filter(f => ok.includes(f))});
+    }
+    stream = await navigator.mediaDevices.getUserMedia({audio: false, video: {facingMode: {ideal: "environment"}, width: {ideal: 1280}, height: {ideal: 720}}});
+  } catch (e) {
+    $("#scanNote").hidden = false;
+    $("#scanNote").textContent = e.name === "NotAllowedError" ? "Camera permission was refused. Allow the camera for this site in Chrome's settings (the icon left of the address), then try again." : "Couldn't start the camera: " + e.message;
+    return;
+  }
+  $("#scanNote").hidden = true;
+  const v = $("#video"); v.srcObject = stream; $("#cam").hidden = false;
+  try { await v.play(); } catch (e) {}
+  const track = stream.getVideoTracks()[0];
+  const caps = track.getCapabilities ? track.getCapabilities() : {};
+  $("#torch").hidden = !caps.torch;
+  scanning = true; $("#scanBtn span").textContent = "Stop scanning";
+  $("#cam").scrollIntoView({block: "nearest", behavior: "smooth"});
+  tick();
+}
+let torchOn = false;
+$("#torch").addEventListener("click", async () => {
+  const track = stream?.getVideoTracks()[0]; if (!track) return;
+  torchOn = !torchOn; try { await track.applyConstraints({advanced: [{torch: torchOn}]}); } catch (e) {}
+});
+async function tick() {
+  if (!scanning) return;
+  try {
+    const found = await detector.detect($("#video"));
+    const hit = found.find(b => /^\d{8,14}$/.test(b.rawValue));
+    if (hit) { navigator.vibrate?.(60); stopScan(); handleCode(hit.rawValue); return; }
+  } catch (e) {}
+  setTimeout(tick, 120);
+}
+function stopScan() {
+  scanning = false; torchOn = false;
+  stream?.getTracks().forEach(t => t.stop()); stream = null;
+  $("#cam").hidden = true; $("#scanBtn span").textContent = "Scan another";
+  if (!lastResult) $("#scanBtn span").textContent = "Start scanning";
+}
+$("#scanBtn").addEventListener("click", () => scanning ? stopScan() : startScan());
+document.addEventListener("visibilitychange", () => { if (document.hidden) stopScan(); });
+
+async function handleCode(rawCode) {
+  const code = canon(rawCode);
+  if (!/^\d{6,14}$/.test(code)) { toast("That doesn't look like a barcode number."); return; }
+  let title = CODES[code]?.title || "", busy = false, offline = false;
+  showResult({code, title, loading: !title});
+  if (!title) {
+    try {
+      const r = await api("/api/lookup?code=" + code, {}, 15000);
+      const j = await r.json();
+      if (j.found) { title = j.title; CODES[code] = {title}; store.set("ph-codes", CODES); }
+      busy = !!j.busy;
+    } catch (e) { offline = true; }
+  }
+  const res = {code, title, busy, offline};
+  addRecent(res);
+  showResult(res);
+}
+function addRecent(r) {
+  RECENT = [{code: r.code || "", title: r.title || "", at: Date.now()}, ...RECENT.filter(x => !(r.code ? x.code === r.code : x.title === r.title))].slice(0, 15);
+  store.set("ph-recent", RECENT); renderRecent();
+}
+function renderRecent() {
+  $("#recentBox").hidden = !RECENT.length;
+  $("#recent").innerHTML = RECENT.map((r, i) => {
+    const m = r.title ? matchTitle(r.title)[0] : null;
+    const v = !r.title ? `<span class="tag">unknown</span>` : m && m[0] >= 0.85 ? `<span class="tag good">have it</span>` : wishFor(r.code, r.title) ? `<span class="tag">wish list</span>` : `<span class="tag warn">not in library</span>`;
+    return `<li><button data-i="${i}">${esc(r.title ? cleanTitle(r.title) : r.code)}</button>${v}</li>`;
+  }).join("");
+}
+$("#recent").addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; const r = RECENT[b.dataset.i]; showResult({code: r.code, title: r.title}); $("#result").scrollIntoView({behavior: "smooth"}); });
+
+function wishFor(code, title) {
+  const nt = norm(cleanTitle(title || ""));
+  return WISH.find(w => (code && w.code === code) || (nt && norm(w.title) === nt));
+}
+
+function hitRow(d, score) {
+  const bits = [d.y, d.l, d.q, d.tv ? `${d.tv[0]} season${d.tv[0] === 1 ? "" : "s"}` : "", isSeen(d) ? "watched" : d.tv && d.w ? `${d.w}/${d.tv[1]} watched` : "not watched"].filter(Boolean);
+  return `<div class="hit">${chip(d)}<div><b>${esc(d.t)}</b><div class="muted small">${esc(bits.join(" · "))}</div></div></div>`;
+}
+
+function showResult(r) {
+  lastResult = r;
+  const box = $("#result");
+  if (r.loading) { box.innerHTML = `<div class="card"><b>Looking up ${esc(r.code)}…</b></div>`; return; }
+  const wish = wishFor(r.code, r.title);
+  const wishNote = wish ? `<p class="small" style="margin:0">♥ Already on your wish list (added ${esc(fmtDate(wish.added))}${wish.format ? ", " + esc(wish.format) : ""}).</p>` : "";
+  const codeLine = r.code ? `<span class="mono small muted">${esc(r.code)}${checkDigitOk(r.code) ? "" : " · check the number"}</span>` : "";
+  if (!r.title) {
+    const why = r.offline ? "You're offline, so the barcode can't be looked up right now."
+              : r.busy ? "The barcode lookup service is busy or over its daily limit."
+              : "The free barcode lookup doesn't know this disc (common for Australian releases).";
+    box.innerHTML = `<div class="card">
+      <div class="verdict maybe"><b>Unknown disc</b><span class="small">${why}</span></div>${codeLine}${wishNote}
+      <form id="nameForm" class="btns"><input type="text" id="nameIn" placeholder="Type the title on the cover" aria-label="Title on the cover" style="flex:1 1 180px" required><button class="btn dark">Check</button></form>
+      <p class="muted small" style="margin:0">The app will remember this barcode, so next time it knows the title straight away.</p></div>`;
+    $("#nameForm").addEventListener("submit", e => { e.preventDefault(); const t = $("#nameIn").value.trim(); if (t) rememberCode(r.code, t); });
+    $("#nameIn").focus();
+    return;
+  }
+  const matches = LIB ? matchTitle(r.title) : [];
+  const best = matches[0];
+  const clean = cleanTitle(r.title);
+  const sureHave = best && best[0] >= 0.85 && (!matches[1] || matches[1][0] < best[0] - 0.05 || best[0] >= 1);
+  let head, body = "";
+  if (!LIB) head = `<div class="verdict maybe"><b>${esc(clean)}</b><span class="small">Your library isn't loaded on this phone yet.</span></div>`;
+  else if (sureHave) {
+    head = `<div class="verdict have"><b>You have it</b><span class="small">${esc(r.title)}</span></div>`;
+    body = hitRow(best[1]) + (matches.length > 1 && matches[1][0] >= 0.7 ? `<p class="muted small" style="margin:0">Also similar: ${matches.slice(1, 3).filter(m => m[0] >= 0.7).map(m => esc(m[1].t) + (m[1].y ? ` (${m[1].y})` : "")).join(", ")}</p>` : "");
+  } else if (best && best[0] >= 0.72) {
+    head = `<div class="verdict maybe"><b>Maybe</b><span class="small">${esc(r.title)}<br>Is it one of these?</span></div>`;
+    body = matches.filter(m => m[0] >= 0.72).slice(0, 3).map(m => hitRow(m[1])).join("");
+  } else {
+    head = `<div class="verdict no"><b>Not in your library</b><span class="small">${esc(r.title)}</span></div>`;
+  }
+  const canWish = !wish && !(sureHave);
+  box.innerHTML = `<div class="card">${head}${codeLine}${wishNote}${body}
+    <div class="btns">
+      ${canWish ? `<button class="btn primary" id="toWish">♥ Add to wish list</button>` : ""}
+      ${sureHave && !wish ? `<button class="btn small" id="toWish">Add to wish list anyway</button>` : ""}
+      ${r.code ? `<button class="btn small" id="fixName">Wrong title?</button>` : ""}
+    </div>
+    <div id="wishFormBox"></div></div>`;
+  $("#toWish")?.addEventListener("click", () => {
+    $("#wishFormBox").innerHTML = wishForm({title: clean, year: yearIn(r.title) || "", format: formatIn(r.title), code: r.code, raw: r.title});
+    bindWishForm($("#wishFormBox"), null);
+  });
+  $("#fixName")?.addEventListener("click", () => {
+    $("#wishFormBox").innerHTML = `<form id="nameForm" class="btns"><input type="text" id="nameIn" value="${esc(clean)}" aria-label="Correct title" style="flex:1 1 180px" required><button class="btn dark">Save title</button></form>`;
+    $("#nameForm").addEventListener("submit", e => { e.preventDefault(); const t = $("#nameIn").value.trim(); if (t) rememberCode(r.code, t); });
+    $("#nameIn").select();
+  });
+}
+function rememberCode(code, title) {
+  if (code) {
+    CODES[code] = {title}; store.set("ph-codes", CODES);
+    queue({op: "barcode", code, title});
+  }
+  const res = {code, title};
+  addRecent(res); showResult(res);
+}
+$("#codeForm").addEventListener("submit", e => { e.preventDefault(); const c = $("#codeIn").value.replace(/\D/g, ""); if (c) { handleCode(c); $("#codeIn").value = ""; } });
+$("#titleForm").addEventListener("submit", e => { e.preventDefault(); const t = $("#titleIn").value.trim(); if (t) { const res = {code: "", title: t}; addRecent(res); showResult(res); $("#titleIn").value = ""; } });
+
+/* ------------------------------------------------------------ wish list + offline sync */
+let WISH = store.get("ph-wish", []);
+let OUTBOX = store.get("ph-outbox", []);
+let flushing = false;
+function saveLocal() { store.set("ph-wish", WISH); store.set("ph-outbox", OUTBOX); updateStatus(); badge(); }
+function badge() { const b = $("#wishBadge"); b.hidden = !WISH.length; b.textContent = WISH.length; }
+function queue(op) { OUTBOX.push(op); saveLocal(); flush(); }
+function applyOp(list, op) {
+  if (op.op === "put") return [...list.filter(w => w.id !== op.item.id), op.item];
+  if (op.op === "del") return list.filter(w => w.id !== op.id);
+  return list;
+}
+async function flush() {
+  if (flushing || signedOut) return;
+  flushing = true;
+  try {
+    while (OUTBOX.length) {
+      const op = OUTBOX[0]; let r;
+      if (op.op === "put") r = await api("/api/wishlist/" + op.item.id, {method: "PUT", headers: {"Content-Type": "application/json"}, body: JSON.stringify(op.item)});
+      else if (op.op === "del") r = await api("/api/wishlist/" + op.id, {method: "DELETE"});
+      else if (op.op === "ok") r = await api("/api/checked/" + op.id, {method: op.on ? "PUT" : "DELETE"});
+      else if (op.op === "barcode") r = await api("/api/barcode", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({code: op.code, title: op.title})});
+      if (r && !r.ok && r.status >= 500) throw new Error("server");
+      OUTBOX.shift(); saveLocal();
+    }
+    await pull();
+  } catch (e) {} finally { flushing = false; updateStatus(); }
+}
+async function pull() {
+  try {
+    const [w, c, k] = await Promise.all([api("/api/wishlist"), api("/api/barcodes"), api("/api/checked")]);
+    if (k.ok) {
+      const ck = new Set(Object.keys(await k.json()));
+      OUTBOX.forEach(op => { if (op.op === "ok") op.on ? ck.add(String(op.id)) : ck.delete(String(op.id)); });
+      CHECKED = ck; store.set("ph-checked", [...CHECKED]);
+      if (ITEMS.length) { applyChecked(); render(); }
+    }
+    if (w.ok) { let list = await w.json(); OUTBOX.forEach(op => list = applyOp(list, op)); WISH = list; }
+    if (c.ok) { CODES = {...CODES, ...(await c.json())}; store.set("ph-codes", CODES); }
+    saveLocal(); renderWish(); renderRecent();
+  } catch (e) {}
+}
+
+const FORMATS = ["", "DVD", "Blu-ray", "4K", "Any"];
+function wishForm(w) {
+  return `<form class="wf" style="display:grid;gap:8px;margin-top:8px">
+    <label class="fld">Title<input type="text" name="title" value="${esc(w.title || "")}" required maxlength="200"></label>
+    <div class="grid2">
+      <label class="fld">Year<input type="number" name="year" value="${esc(w.year || "")}" min="1900" max="2100" inputmode="numeric"></label>
+      <label class="fld">Format<select name="format">${FORMATS.map(f => `<option value="${f}" ${f === (w.format || "") ? "selected" : ""}>${f || "—"}</option>`).join("")}</select></label>
+    </div>
+    <label class="fld">Note<input type="text" name="note" value="${esc(w.note || "")}" maxlength="500" placeholder="e.g. only if under $10, the steelbook"></label>
+    <input type="hidden" name="code" value="${esc(w.code || "")}"><input type="hidden" name="raw" value="${esc(w.raw || "")}">
+    <div class="btns"><button class="btn primary">${w.id ? "Save changes" : "Add to wish list"}</button></div>
+  </form>`;
+}
+function bindWishForm(box, existing) {
+  const f = box.querySelector("form.wf");
+  f.querySelector("[name=title]").focus();
+  f.addEventListener("submit", e => {
+    e.preventDefault();
+    const fd = new FormData(f);
+    const item = {...(existing || {}), id: existing?.id || newId(), title: fd.get("title").trim(), added: existing?.added || today()};
+    for (const k of ["format", "note", "code", "raw"]) { const v = String(fd.get(k) || "").trim(); if (v) item[k] = v; else delete item[k]; }
+    const y = parseInt(fd.get("year")); if (y) item.year = y; else delete item.year;
+    if (!item.title) return;
+    WISH = applyOp(WISH, {op: "put", item}); queue({op: "put", item});
+    toast(existing ? "Saved" : online ? "Added to your wish list" : "Added. It'll sync when you're back online.");
+    box.innerHTML = "";
+    if (!existing && lastResult) showResult(lastResult);
+    renderWish(); renderRecent();
+  });
+}
+function renderWish() {
+  badge();
+  $("#addForm").innerHTML || ($("#addForm").innerHTML = wishForm({}), bindWishForm($("#addForm"), null), $("#addBox").open = false);
+  const sort = $("#wishSort").value;
+  const list = [...WISH].sort(sort === "az" ? (a, b) => sortKey(a.title).localeCompare(sortKey(b.title))
+    : sort === "fmt" ? (a, b) => (a.format || "~").localeCompare(b.format || "~") || sortKey(a.title).localeCompare(sortKey(b.title))
+    : (a, b) => (b.added || "").localeCompare(a.added || "") || b.id.localeCompare(a.id));
+  const pend = new Set(OUTBOX.filter(o => o.op === "put").map(o => o.item.id));
+  $("#wishCount").textContent = WISH.length ? `${WISH.length} title${WISH.length === 1 ? "" : "s"}` : "";
+  $("#wish").innerHTML = list.length ? list.map(w => {
+    const m = LIB ? matchTitle(w.title + (w.year ? " " + w.year : ""))[0] : null;
+    const got = m && m[0] >= 0.95;
+    return `<li data-id="${esc(w.id)}">
+      <div class="top"><b>${esc(w.title)}${w.year ? ` <span class="muted mono small">${w.year}</span>` : ""}</b>${w.format ? `<span class="tag ${w.format === "4K" ? "k4" : ""}">${esc(w.format)}</span>` : ""}</div>
+      ${w.note ? `<div class="small">${esc(w.note)}</div>` : ""}
+      <div class="sub"><span>Added ${esc(fmtDate(w.added))}</span>${w.code ? `<span>${esc(w.code)}</span>` : ""}${pend.has(w.id) ? `<span class="tag">waiting to sync</span>` : ""}${got ? `<span class="tag good">now in your library</span>` : ""}</div>
+      <div class="btns"><button class="btn small" data-act="edit">Edit</button><button class="btn small" data-act="got">Bought it</button><button class="btn small danger" data-act="del">Remove</button></div>
+      <div class="edit"></div></li>`;
+  }).join("") : `<p class="empty">Nothing on your wish list yet. Scan a disc you don't have and tap “Add to wish list”.</p>`;
+}
+$("#wishSort").addEventListener("input", renderWish);
+$("#wish").addEventListener("click", e => {
+  const b = e.target.closest("button[data-act]"); if (!b) return;
+  const li = b.closest("li"), w = WISH.find(x => x.id === li.dataset.id); if (!w) return;
+  if (b.dataset.act === "edit") { const box = li.querySelector(".edit"); box.innerHTML = box.innerHTML ? "" : wishForm(w); if (box.innerHTML) bindWishForm(box, w); return; }
+  if (!b.dataset.sure) { b.dataset.sure = 1; const old = b.textContent; b.textContent = "Tap again"; setTimeout(() => { b.textContent = old; delete b.dataset.sure; }, 3000); return; }
+  WISH = applyOp(WISH, {op: "del", id: w.id}); queue({op: "del", id: w.id});
+  toast(b.dataset.act === "got" ? `Enjoy ${w.title}!` : "Removed");
+  renderWish(); renderRecent();
+});
+
+/* ------------------------------------------------------------ settings */
+async function renderMore() {
+  $("#libInfo").textContent = LIB ? `${ITEMS.length.toLocaleString()} titles, updated ${fmtWhen(LIB.updated)}. The server re-reads Plex every few hours by itself.` : "Not loaded yet.";
+  let info = "";
+  try {
+    if (navigator.storage?.estimate) { const e = await navigator.storage.estimate(); info = `Using ${(e.usage / 1048576).toFixed(0)} MB on this phone.`; }
+    if (navigator.storage?.persisted && await navigator.storage.persisted()) info += " Kept safe from automatic clean-up.";
+  } catch (e) {}
+  $("#offInfo").textContent = info;
+}
+$("#refreshBtn").addEventListener("click", async e => {
+  const b = e.target; b.disabled = true; b.textContent = "Reading Plex…";
+  try {
+    await api("/api/refresh", {method: "POST"});
+    for (let i = 0; i < 40; i++) {
+      await new Promise(r => setTimeout(r, 3000));
+      const s = await (await api("/api/status")).json();
+      if (!s.refreshing) { if (s.error) toast("Plex refresh failed: " + s.error); break; }
+    }
+    await loadLibrary(true); toast("Library is up to date"); renderMore();
+  } catch (err) { toast("Couldn't reach the server."); }
+  b.disabled = false; b.textContent = "Refresh from Plex now";
+});
+$("#postersBtn").addEventListener("click", async e => {
+  if (!LIB) return;
+  const b = e.target; b.disabled = true;
+  try { await navigator.storage?.persist?.(); } catch (err) {}
+  const todo = ITEMS.filter(posterUrl), bar = $("#prog"), fill = bar.querySelector("i");
+  bar.hidden = false; let done = 0, failed = 0, i = 0;
+  async function worker() {
+    while (i < todo.length) {
+      const d = todo[i++];
+      try { const r = await fetch(posterUrl(d), {credentials: "same-origin"}); if (!r.ok) failed++; await r.blob(); } catch (err) { failed++; }
+      done++; fill.style.width = (done / todo.length * 100).toFixed(1) + "%"; b.textContent = `Saving posters… ${done} / ${todo.length}`;
+    }
+  }
+  await Promise.all([1, 2, 3, 4, 5, 6].map(worker));
+  b.textContent = failed ? `Saved ${done - failed} posters (${failed} couldn't be fetched)` : `All ${done} posters saved`;
+  b.disabled = false; renderMore();
+});
+let installEvt = null;
+addEventListener("beforeinstallprompt", e => { e.preventDefault(); installEvt = e; $("#installBox").hidden = false; });
+$("#installBtn").addEventListener("click", async () => { if (!installEvt) return; installEvt.prompt(); await installEvt.userChoice; installEvt = null; $("#installBox").hidden = true; });
+
+/* ------------------------------------------------------------ start */
+if ("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js").catch(() => {});
+badge(); renderRecent(); updateStatus(); go("library", true);
+if (VIEWS_MAIN.includes(goParam) && goParam !== "library") go(goParam);
+loadLibrary().then(() => { flush(); if (!OUTBOX.length) pull(); });
+</script>
+</body></html>

@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#0E1217">
+<title>Sign in · Picture House</title>
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" href="/icon.svg" type="image/svg+xml">
+<style>
+:root{--ground:#EDEFF2;--surface:#FFFFFF;--ink:#161B22;--muted:#596371;--line:#D4DAE1;--accent:#8F5F00;--accent-fill:#F3C24E;--accent-ink:#2A1D00;--warn:#9A3412;--focus:#2563EB}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){color-scheme:dark;--ground:#0E1217;--surface:#161B22;--ink:#E7EAEE;--muted:#9AA4B1;--line:#29313B;--accent:#F0BE4A;--accent-fill:#F0BE4A;--accent-ink:#1E1500;--warn:#FDBA8C;--focus:#7AA2FF}}
+:root[data-theme="dark"]{color-scheme:dark;--ground:#0E1217;--surface:#161B22;--ink:#E7EAEE;--muted:#9AA4B1;--line:#29313B;--accent:#F0BE4A;--accent-fill:#F0BE4A;--accent-ink:#1E1500;--warn:#FDBA8C;--focus:#7AA2FF}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;display:grid;place-items:center;background:var(--ground);color:var(--ink);font:16px/1.5 "IBM Plex Sans",system-ui,sans-serif;padding:16px}
+main{width:100%;max-width:360px;display:grid;gap:18px}
+img{width:72px;height:72px}
+h1{font:800 44px/.9 "Big Shoulders Display","Arial Narrow",sans-serif;text-transform:uppercase;margin:0}
+h1 span{color:var(--accent)}
+form{display:grid;gap:10px}
+input{font:inherit;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px}
+button{font:600 16px/1 inherit;font-family:inherit;min-height:48px;border:0;border-radius:10px;background:var(--accent-fill);color:var(--accent-ink);cursor:pointer}
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.err{color:var(--warn);margin:0}
+p{margin:0;color:var(--muted);font-size:14px}
+</style></head><body>
+<main>
+  <img src="/icon.svg" alt="">
+  <h1>Picture <span>House</span></h1>
+  <form method="post" action="/login">
+    <p class="err" id="err" hidden>That password didn't work. Try again.</p>
+    <input type="password" name="password" placeholder="Password" aria-label="Password" autocomplete="current-password" required autofocus>
+    <button>Sign in</button>
+  </form>
+  <p>You stay signed in on this phone for about a year.</p>
+</main>
+<script>
+try { const t = JSON.parse(localStorage.getItem("ph-theme") || '""'); if (t) document.documentElement.dataset.theme = t; } catch (e) {}
+if (location.search.includes("wrong=1")) document.getElementById("err").hidden = false;
+</script>
+</body></html>

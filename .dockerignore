@@ -1,0 +1,7 @@
+.git
+.github
+docs
+packaging
+__pycache__
+*.md
+!README.md

@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#0E1217">
+<title>Set up · Picture House</title>
+<link rel="icon" href="/icon.svg" type="image/svg+xml">
+<style>
+:root{--ground:#EDEFF2;--surface:#FFFFFF;--ink:#161B22;--muted:#596371;--line:#D4DAE1;--accent:#8F5F00;--accent-fill:#F3C24E;--accent-ink:#2A1D00;--warn:#9A3412;--ok:#166534;--focus:#2563EB}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){color-scheme:dark;--ground:#0E1217;--surface:#161B22;--ink:#E7EAEE;--muted:#9AA4B1;--line:#29313B;--accent:#F0BE4A;--accent-fill:#F0BE4A;--accent-ink:#1E1500;--warn:#FDBA8C;--ok:#86EFAC;--focus:#7AA2FF}}
+:root[data-theme="dark"]{color-scheme:dark;--ground:#0E1217;--surface:#161B22;--ink:#E7EAEE;--muted:#9AA4B1;--line:#29313B;--accent:#F0BE4A;--accent-fill:#F0BE4A;--accent-ink:#1E1500;--warn:#FDBA8C;--ok:#86EFAC;--focus:#7AA2FF}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;display:grid;place-items:center;background:var(--ground);color:var(--ink);font:16px/1.5 "IBM Plex Sans",system-ui,sans-serif;padding:24px 16px}
+main{width:100%;max-width:440px;display:grid;gap:20px}
+header{display:flex;gap:14px;align-items:center}
+header img{width:56px;height:56px}
+h1{font:800 40px/.9 "Big Shoulders Display","Arial Narrow",sans-serif;text-transform:uppercase;margin:0}
+h1 span{color:var(--accent)}
+section{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px;display:grid;gap:12px}
+section[aria-disabled="true"]{opacity:.55}
+h2{margin:0;font-size:17px;display:flex;gap:10px;align-items:center}
+h2 b{display:inline-grid;place-items:center;width:26px;height:26px;border-radius:50%;background:var(--accent-fill);color:var(--accent-ink);font-size:14px}
+label{display:grid;gap:4px;font-size:14px;color:var(--muted)}
+input,select{font:inherit;color:var(--ink);background:var(--ground);border:1px solid var(--line);border-radius:10px;padding:11px;width:100%}
+button{font:600 16px/1 inherit;font-family:inherit;min-height:46px;border:0;border-radius:10px;background:var(--accent-fill);color:var(--accent-ink);cursor:pointer;padding:0 16px}
+button.plain{background:transparent;color:var(--ink);border:1px solid var(--line)}
+button:disabled{opacity:.6;cursor:default}
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+p{margin:0}
+.muted{color:var(--muted);font-size:14px}
+.msg{font-size:14px;margin:0}
+.msg.bad{color:var(--warn)} .msg.good{color:var(--ok)}
+.row{display:flex;gap:8px}
+.row input{flex:1}
+details summary{cursor:pointer;color:var(--muted);font-size:14px}
+details[open] summary{margin-bottom:8px}
+</style></head><body>
+<main>
+  <header><img src="/icon.svg" alt=""><h1>Picture <span>House</span></h1></header>
+  <p class="muted">Welcome! Three quick steps and your library will be ready. Picture House only reads from Plex. It never changes anything.</p>
+
+  <section id="s1">
+    <h2><b>1</b> Sign in to Plex</h2>
+    <p class="muted">A Plex window opens. Sign in, then come back to this tab.</p>
+    <button id="signin">Sign in with Plex</button>
+    <p class="msg" id="m1" role="status"></p>
+    <details>
+      <summary>Or paste a Plex token instead</summary>
+      <label>Plex token<input id="token" type="password" autocomplete="off" spellcheck="false"></label>
+      <p class="muted">In Plex on the web, open any movie, click ⋯ then Get Info then View XML, and copy the text after <code>X-Plex-Token=</code> in the address.</p>
+    </details>
+  </section>
+
+  <section id="s2">
+    <h2><b>2</b> Find your Plex server</h2>
+    <select id="found" hidden aria-label="Servers found on your Plex account"></select>
+    <label>Plex server address
+      <div class="row"><input id="server" spellcheck="false" placeholder="http://192.168.1.20:32400"><button class="plain" id="test" type="button">Test</button></div>
+    </label>
+    <p class="msg" id="m2" role="status"></p>
+  </section>
+
+  <section id="s3">
+    <h2><b>3</b> Choose a password</h2>
+    <p class="muted">You'll type this once on each phone or computer that opens Picture House.</p>
+    <label>Password (at least 8 characters)<input id="pw" type="password" autocomplete="new-password" minlength="8"></label>
+    <label>Type it again<input id="pw2" type="password" autocomplete="new-password"></label>
+    <button id="save">Finish setup</button>
+    <p class="msg" id="m3" role="status"></p>
+  </section>
+</main>
+<script>
+const $ = s => document.querySelector(s);
+const say = (el, text, kind) => { el.textContent = text; el.className = "msg" + (kind ? " " + kind : ""); };
+let polling = null, signedIn = false;
+
+async function api(path, body) {
+  const r = await fetch(path, body === undefined ? {} : {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(body)});
+  let j = {}; try { j = await r.json(); } catch (e) {}
+  if (!r.ok) throw new Error(j.error || "Something went wrong (" + r.status + ").");
+  return j;
+}
+
+fetch("/api/setup/info").then(r => r.json()).then(j => { if (!$("#server").value) $("#server").value = j.plex; }).catch(() => {});
+
+$("#signin").onclick = async () => {
+  const win = window.open("about:blank", "plexauth", "width=520,height=720");
+  $("#signin").disabled = true;
+  say($("#m1"), "Opening Plex…");
+  try {
+    const pin = await api("/api/setup/pin", {});
+    if (win && !win.closed) win.location = pin.url; else window.open(pin.url, "_blank");
+    say($("#m1"), "Waiting for you to sign in to Plex…");
+    const started = Date.now();
+    clearInterval(polling);
+    polling = setInterval(async () => {
+      try {
+        const res = await api("/api/setup/pin/" + pin.id);
+        if (res.done) {
+          clearInterval(polling);
+          signedIn = true;
+          try { win && win.close(); } catch (e) {}
+          say($("#m1"), "Signed in to Plex.", "good");
+          $("#signin").textContent = "Signed in ✓";
+          showServers(res);
+        } else if (res.expired || Date.now() - started > 10 * 60 * 1000) {
+          clearInterval(polling);
+          $("#signin").disabled = false;
+          say($("#m1"), "The sign-in timed out. Press the button to try again.", "bad");
+        }
+      } catch (e) { /* keep trying */ }
+    }, 2000);
+  } catch (e) {
+    try { win && win.close(); } catch (e2) {}
+    $("#signin").disabled = false;
+    say($("#m1"), e.message, "bad");
+  }
+};
+
+function showServers(res) {
+  const sel = $("#found");
+  sel.innerHTML = "";
+  if (res.servers && res.servers.length > 1) {
+    for (const s of res.servers) {
+      const o = document.createElement("option");
+      o.value = s.uri; o.textContent = s.name + " · " + s.uri + (s.local ? "" : " (outside your home)");
+      sel.append(o);
+    }
+    if (res.server && ![...sel.options].some(o => o.value === res.server)) {
+      const o = document.createElement("option"); o.value = res.server; o.textContent = res.name + " · " + res.server; sel.prepend(o);
+    }
+    sel.value = res.server || sel.options[0].value;
+    sel.hidden = false;
+    sel.onchange = () => { $("#server").value = sel.value; test(); };
+  }
+  if (res.server) {
+    $("#server").value = res.server;
+    say($("#m2"), "Found " + res.name + ".", "good");
+  } else {
+    if (res.servers && res.servers[0]) $("#server").value = res.servers[0].uri;
+    say($("#m2"), "Couldn't reach your server automatically. Check the address, then press Test.", "bad");
+  }
+}
+
+async function test() {
+  say($("#m2"), "Testing…");
+  try {
+    const r = await api("/api/setup/test", {server: $("#server").value, token: $("#token").value});
+    if (r.ok) { $("#server").value = r.server; say($("#m2"), "Connected to " + r.name + ".", "good"); return true; }
+    say($("#m2"), r.error, "bad");
+  } catch (e) { say($("#m2"), e.message, "bad"); }
+  return false;
+}
+$("#test").onclick = test;
+
+$("#save").onclick = async () => {
+  const pw = $("#pw").value;
+  if (!signedIn && !$("#token").value.trim()) return say($("#m3"), "Do step 1 first: sign in with Plex.", "bad");
+  if (pw.length < 8) return say($("#m3"), "The password needs at least 8 characters.", "bad");
+  if (pw !== $("#pw2").value) return say($("#m3"), "The two passwords don't match.", "bad");
+  $("#save").disabled = true;
+  say($("#m3"), "Saving…");
+  try {
+    await api("/api/setup/save", {server: $("#server").value, token: $("#token").value, password: pw});
+    say($("#m3"), "All done! Reading your library from Plex…", "good");
+    setTimeout(() => location.href = "/", 2500);
+  } catch (e) {
+    $("#save").disabled = false;
+    say($("#m3"), e.message, "bad");
+  }
+};
+</script>
+</body></html>

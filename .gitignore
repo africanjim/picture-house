@@ -1,0 +1,14 @@
+__pycache__/
+*.pyc
+build/
+dist/
+*.spec
+.venv/
+# your own data never goes in the repo
+server.json
+config.json
+library.json
+checked.json
+wishlist.json
+barcodes.json
+posters/

@@ -1,0 +1,17 @@
+# Picture House with Docker. Start it with:  docker compose up -d
+# Then open http://<this computer's address>:8765 in a browser to finish setup.
+services:
+  picturehouse:
+    image: ghcr.io/africanjim/picture-house:latest
+    container_name: picturehouse
+    restart: unless-stopped
+    ports:
+      - "8765:8765"
+    volumes:
+      - picturehouse-data:/data
+    environment:
+      - TZ=Etc/UTC            # change to your time zone, e.g. Europe/London
+    extra_hosts:
+      - "host.docker.internal:host-gateway"   # lets it reach Plex on this same computer
+volumes:
+  picturehouse-data:
