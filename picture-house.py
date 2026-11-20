@@ -33,7 +33,7 @@ import urllib.parse
 import urllib.request
 
 APP = "Picture House"
-VERSION = "1.2.0"
+VERSION = "1.2.1"
 DEFAULT_SERVER = "http://127.0.0.1:32400"
 CONFIG_DIR = os.path.join(os.environ.get("XDG_CONFIG_HOME", os.path.expanduser("~/.config")), "picture-house")
 CONFIG_FILE = os.path.join(CONFIG_DIR, "config.json")

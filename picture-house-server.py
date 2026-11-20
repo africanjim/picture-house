@@ -33,6 +33,7 @@ import traceback
 import urllib.error
 import urllib.parse
 import urllib.request
+from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, wait
 import uuid
 import webbrowser
 
@@ -416,6 +417,16 @@ class Handler(http.server.BaseHTTPRequestHandler):
             q = urllib.parse.urlencode({"clientID": self.client_id(), "code": pin["code"],
                                         "context[device][product]": ph.APP})
             return self.send(200, {"id": pin["id"], "url": "https://app.plex.tv/auth#?" + q})
+        if p == "/api/setup/find":
+            token = str(b.get("token") or "").strip()
+            if not token:
+                return self.send(400, {"error": "Paste a Plex token first."})
+            found = self.discover(token)
+            if not found["server"]:
+                ok = plex_tv_ok(token, self.client_id())
+                return self.send(200, {**found, "error": "Couldn't reach your Plex server from this computer."
+                                       if ok else "Plex didn't accept that token. Check you copied all of it."})
+            return self.send(200, found)
         if p == "/api/setup/test":
             token = str(b.get("token") or "").strip() or self.server.pending_token
             server = str(b.get("server") or "").strip()
@@ -461,25 +472,55 @@ class Handler(http.server.BaseHTTPRequestHandler):
         if not token:
             return self.send(200, {"done": False, "expired": pin.get("expiresIn", 1) <= 0})
         self.server.pending_token = token
-        servers = []
+        return self.send(200, {"done": True, **self.discover(token)})
+
+    def discover(self, token):
+        """Find a working address for the user's Plex server(s). Plex lists every
+        address the server has (including Docker-internal ones that only work on
+        that machine), so test them all at once, briefly, and keep what answers."""
+        cands = [(PLEX_DEFAULT, "", True)]
         try:
             for r in plex_tv("GET", "/resources?includeHttps=1&includeRelay=0", self.client_id(), token):
-                if "server" in (r.get("provides") or "") and r.get("owned"):
-                    conns = sorted(r.get("connections") or [], key=lambda c: (not c.get("local"), c.get("relay", False)))
-                    for c in conns:
-                        if c.get("address") and c.get("port"):
-                            servers.append({"name": r.get("name") or "Plex", "local": bool(c.get("local")),
-                                            "uri": f"http://{c['address']}:{c['port']}"})
+                if "server" not in (r.get("provides") or "") or not r.get("owned"):
+                    continue
+                for c in r.get("connections") or []:
+                    if c.get("relay"):
+                        continue
+                    if c.get("address") and c.get("port") and not c.get("IPv6"):
+                        cands.append((f"http://{c['address']}:{c['port']}", r.get("name") or "Plex", bool(c.get("local"))))
+                    elif c.get("uri"):
+                        cands.append((c["uri"], r.get("name") or "Plex", bool(c.get("local"))))
         except PlexTvError:
             pass
-        best = test_plex(PLEX_DEFAULT, token)
-        if not best:
-            for s in servers:
-                best = test_plex(s["uri"], token, timeout=4)
-                if best:
-                    break
-        return self.send(200, {"done": True, "server": best[0] if best else "",
-                               "name": best[1] if best else "", "servers": servers[:12]})
+        seen, uniq = set(), []
+        for c in cands:
+            if c[0] not in seen:
+                seen.add(c[0])
+                uniq.append(c)
+        pool = ThreadPoolExecutor(max_workers=min(32, len(uniq)))
+        futs = {pool.submit(test_plex, c[0], token, 3): c for c in uniq}
+        working, deadline, grace = [], time.time() + 12, None
+        pending = set(futs)
+        while pending and time.time() < (grace or deadline):
+            done, pending = wait(pending, timeout=0.25, return_when=FIRST_COMPLETED)
+            for f in done:
+                uri, name, local = futs[f]
+                res = f.result()
+                if res:
+                    working.append({"uri": res[0], "name": res[1] or name, "local": local,
+                                    "rank": uniq.index(futs[f])})
+                    if local and not grace:
+                        grace = time.time() + 1    # a home address answered: don't wait for the slow ones
+        pool.shutdown(wait=False, cancel_futures=True)
+        # this computer first, then home-network addresses, then over the internet; one per server
+        working.sort(key=lambda w: (w["rank"] != 0, not w["local"], w["rank"]))
+        best_per_server = {}
+        for w in working:
+            best_per_server.setdefault(w["name"], {k: w[k] for k in ("uri", "name", "local")})
+        servers = list(best_per_server.values())
+        best = servers[0] if servers else None
+        return {"server": best["uri"] if best else "", "name": best["name"] if best else "",
+                "servers": servers}
 
     def poster(self, key):
         ver = self.server.library.ids.get(key)
@@ -571,6 +612,14 @@ def plex_tv(method, path, client_id, token=None):
             return json.load(r)
     except (urllib.error.URLError, OSError, ValueError) as e:
         raise PlexTvError(f"Couldn't reach plex.tv ({e}).") from e
+
+
+def plex_tv_ok(token, client_id):
+    try:
+        plex_tv("GET", "/user", client_id, token)
+        return True
+    except PlexTvError:
+        return False
 
 
 def test_plex(server, token, timeout=8):

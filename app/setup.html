@@ -72,7 +72,7 @@ details[open] summary{margin-bottom:8px}
 <script>
 const $ = s => document.querySelector(s);
 const say = (el, text, kind) => { el.textContent = text; el.className = "msg" + (kind ? " " + kind : ""); };
-let polling = null, signedIn = false;
+let run = 0, signedIn = false;
 
 async function api(path, body) {
   const r = await fetch(path, body === undefined ? {} : {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(body)});
@@ -92,24 +92,26 @@ $("#signin").onclick = async () => {
     if (win && !win.closed) win.location = pin.url; else window.open(pin.url, "_blank");
     say($("#m1"), "Waiting for you to sign in to Plex…");
     const started = Date.now();
-    clearInterval(polling);
-    polling = setInterval(async () => {
-      try {
-        const res = await api("/api/setup/pin/" + pin.id);
-        if (res.done) {
-          clearInterval(polling);
-          signedIn = true;
-          try { win && win.close(); } catch (e) {}
-          say($("#m1"), "Signed in to Plex.", "good");
-          $("#signin").textContent = "Signed in ✓";
-          showServers(res);
-        } else if (res.expired || Date.now() - started > 10 * 60 * 1000) {
-          clearInterval(polling);
-          $("#signin").disabled = false;
-          say($("#m1"), "The sign-in timed out. Press the button to try again.", "bad");
-        }
-      } catch (e) { /* keep trying */ }
-    }, 2000);
+    const myRun = ++run;
+    while (myRun === run) {
+      await new Promise(r => setTimeout(r, 2000));
+      let res;
+      try { res = await api("/api/setup/pin/" + pin.id); } catch (e) { continue; }
+      if (!res.done && !res.expired && win && win.closed) say($("#m1"), "Checking your sign-in…");
+      if (res.done) {
+        signedIn = true;
+        try { win && win.close(); } catch (e) {}
+        say($("#m1"), "Signed in to Plex.", "good");
+        $("#signin").textContent = "Signed in ✓";
+        showServers(res);
+        return;
+      }
+      if (res.expired || Date.now() - started > 10 * 60 * 1000) {
+        $("#signin").disabled = false;
+        say($("#m1"), "The sign-in timed out. Press the button to try again.", "bad");
+        return;
+      }
+    }
   } catch (e) {
     try { win && win.close(); } catch (e2) {}
     $("#signin").disabled = false;
@@ -123,7 +125,7 @@ function showServers(res) {
   if (res.servers && res.servers.length > 1) {
     for (const s of res.servers) {
       const o = document.createElement("option");
-      o.value = s.uri; o.textContent = s.name + " · " + s.uri + (s.local ? "" : " (outside your home)");
+      o.value = s.uri; o.textContent = s.name + " · " + s.uri + (s.local ? "" : " (over the internet)");
       sel.append(o);
     }
     if (res.server && ![...sel.options].some(o => o.value === res.server)) {
@@ -138,7 +140,7 @@ function showServers(res) {
     say($("#m2"), "Found " + res.name + ".", "good");
   } else {
     if (res.servers && res.servers[0]) $("#server").value = res.servers[0].uri;
-    say($("#m2"), "Couldn't reach your server automatically. Check the address, then press Test.", "bad");
+    say($("#m2"), "Couldn't reach your Plex server from this computer. Is Plex running, and is this computer on the same network? You can also type its address and press Test.", "bad");
   }
 }
 
@@ -152,6 +154,17 @@ async function test() {
   return false;
 }
 $("#test").onclick = test;
+
+$("#token").addEventListener("change", async () => {
+  const token = $("#token").value.trim();
+  if (!token) return;
+  say($("#m1"), "Checking the token and looking for your Plex server…");
+  try {
+    const res = await api("/api/setup/find", {token});
+    if (res.server) { say($("#m1"), "Token works.", "good"); showServers(res); }
+    else say($("#m1"), res.error, "bad");
+  } catch (e) { say($("#m1"), e.message, "bad"); }
+});
 
 $("#save").onclick = async () => {
   const pw = $("#pw").value;
