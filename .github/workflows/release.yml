@@ -79,6 +79,7 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           path: assets
+          pattern: picture-house-*
           merge-multiple: true
       - name: Linux desktop page maker
         run: zip -q -r assets/picture-house-linux-desktop.zip picture-house.py install.sh icon.svg LICENSE README.md
